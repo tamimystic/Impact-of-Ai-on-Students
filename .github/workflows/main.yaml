@@ -14,8 +14,10 @@ jobs:
           fetch-depth: 0
           lfs: true
       - name: Push to hub
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          git remote add space https://huggingface.co/spaces/tamimystic/Impact-of-Ai-on-Students
-          git push --force https://tamimystic:$HF_TOKEN@huggingface.co/spaces/tamimystic/Impact-of-Ai-on-Students main
+        uses: huggingface/hub-action@v0
+        with:
+          token: ${{ secrets.HF_TOKEN }}
+          repo_id: tamimystic/Impact-of-Ai-on-Students
+          repo_type: space
+          local_dir: ./
+          commit_message: "Sync from GitHub via CI/CD"
