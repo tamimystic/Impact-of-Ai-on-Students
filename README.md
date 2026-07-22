@@ -1,7 +1,7 @@
 ---
 title: Impact of Ai on Students
 emoji: 🎓
-colorFrom: cyan
+colorFrom: blue
 colorTo: blue
 sdk: gradio
 sdk_version: 5.0.0
