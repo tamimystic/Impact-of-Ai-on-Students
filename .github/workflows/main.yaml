@@ -1,11 +1,12 @@
 name: Sync to Hugging Face Hub
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
 jobs:
-  sync:
+  sync-to-hub:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -13,10 +14,9 @@ jobs:
           fetch-depth: 0
           lfs: true
       - name: Push to hub
-        uses: huggingface/hub-sync@v0.1.0
-        with:
-          github_repo_id: ${{ github.repository }}
-          huggingface_repo_id: tamimystic/Impact-of-Ai-on-Students
-          hf_token: ${{ secrets.HF_TOKEN }}
-          repo_type: space
-          space_sdk: gradio
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git config --global user.email "tamimystic@users.noreply.github.com"
+          git config --global user.name "tamimystic"
+          git push --force https://tamimystic:$HF_TOKEN@huggingface.co/spaces/tamimystic/Impact-of-Ai-on-Students main
