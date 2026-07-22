@@ -17,5 +17,5 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git remote add space https://huggingface.co/spaces/YOUR_HF_USERNAME/YOUR_SPACE_NAME
-          git push --force https://YOUR_HF_USERNAME:$HF_TOKEN@huggingface.co/spaces/YOUR_HF_USERNAME/YOUR_SPACE_NAME main
+          git remote add space https://huggingface.co/spaces/tamimystic/Impact-of-Ai-on-Students
+          git push --force https://tamimystic:$HF_TOKEN@huggingface.co/spaces/tamimystic/Impact-of-Ai-on-Students main
