@@ -94,6 +94,9 @@ def get_pipeline():
 pipeline, pipeline_ready = get_pipeline()
 
 @spaces.GPU
+def dummy_gpu_function():
+    pass
+
 def predict_gpa(major, year, pre_gpa, genai_hours, use_case, prompt_skill, 
                tool_div, paid_sub, study_hours, ai_dep, inst_policy, 
                anxiety, retention, burnout):
@@ -165,6 +168,12 @@ with gr.Blocks(theme=theme, css=custom_css) as demo:
                 anxiety, retention, burnout],
         outputs=[result_display, warning_display]
     )
+    
+    gr.HTML("""
+    <div style="text-align: center; margin-top: 2rem; padding: 1rem; color: #a8b2d1; font-size: 1.1rem;">
+        Powered by <a href="https://www.linkedin.com/in/tamimystic/" target="_blank" style="color: #00f2fe; text-decoration: none; font-weight: bold; transition: text-shadow 0.3s ease;" onmouseover="this.style.textShadow='0 0 10px #00f2fe';" onmouseout="this.style.textShadow='none';">tamimystic</a>
+    </div>
+    """)
 
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=7860)
