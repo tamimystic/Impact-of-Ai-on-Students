@@ -12,16 +12,12 @@ class DataValidation:
         try:
             self.data_ingestion_artifact = data_ingestion_artifact
             self.data_validation_config = data_validation_config
-            # In a real scenario, we would validate schema, missing values, datatypes etc.
-            # Here we are just creating a basic validation.
         except Exception as e:
             raise CustomException(e, sys)
 
     def validate_columns(self) -> bool:
         try:
-            # We can load the train file and check if it is valid
             train_df = pd.read_csv(self.data_ingestion_artifact.train_file_path)
-            # Assuming dataset has some columns, we check if they are > 0
             status = len(train_df.columns) > 0
             
             dir_path = os.path.dirname(self.data_validation_config.valid_status_file_dir)

@@ -20,9 +20,6 @@ class ModelEvaluation:
         try:
             logging.info("Initiating model evaluation")
             
-            # Since we are using an already trained model and don't have a previous model in production,
-            # we will blindly accept this model.
-            
             is_model_accepted = True
             
             model_evaluation_artifact = ModelEvaluationArtifact(

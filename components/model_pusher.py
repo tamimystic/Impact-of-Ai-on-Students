@@ -22,13 +22,11 @@ class ModelPusher:
             logging.info("Initiating model pusher")
             os.makedirs(os.path.dirname(self.model_pusher_config.model_file_path), exist_ok=True)
             
-            # push model
             shutil.copy(
                 self.model_trainer_artifact.trained_model_file_path,
                 self.model_pusher_config.model_file_path
             )
             
-            # push preprocessor
             shutil.copy(
                 self.data_transformation_artifact.transformed_object_file_path,
                 self.model_pusher_config.preprocessor_path
