@@ -1,6 +1,7 @@
 import gradio as gr
 import pandas as pd
 import time
+import spaces
 from pipeline.prediction_pipeline import PredictionPipeline
 
 custom_css = """
@@ -92,6 +93,7 @@ def get_pipeline():
 
 pipeline, pipeline_ready = get_pipeline()
 
+@spaces.GPU
 def predict_gpa(major, year, pre_gpa, genai_hours, use_case, prompt_skill, 
                tool_div, paid_sub, study_hours, ai_dep, inst_policy, 
                anxiety, retention, burnout):
