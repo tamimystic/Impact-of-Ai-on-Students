@@ -1,15 +1,5 @@
----
-title: Impact of Ai on Students
-emoji: 🎓
-colorFrom: blue
-colorTo: blue
-sdk: gradio
-sdk_version: 4.42.0
-app_file: app.py
-pinned: false
----
-
 # AI Student Impact Predictor
+
 
 Live Application: [https://huggingface.co/spaces/tamimystic/Impact-of-Ai-on-Students](https://huggingface.co/spaces/tamimystic/Impact-of-Ai-on-Students)
 

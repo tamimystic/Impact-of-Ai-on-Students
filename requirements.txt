@@ -5,9 +5,7 @@ seaborn
 matplotlib
 scipy
 keras
-tensorflow
+tensorflow-cpu
 pymongo
 python-dotenv
-gradio==4.42.0
-huggingface-hub==0.23.2
-spaces
+streamlit

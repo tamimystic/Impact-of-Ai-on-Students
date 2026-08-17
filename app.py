@@ -1,179 +1,257 @@
-import gradio as gr
+import os
+import streamlit as st
 import pandas as pd
+import numpy as np
 import time
-import spaces
 from pipeline.prediction_pipeline import PredictionPipeline
 
-custom_css = """
-body, .gradio-container {
-    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364) !important;
-    color: #ffffff !important;
-    font-family: 'Inter', sans-serif !important;
-}
-
-@keyframes fadeInDown {
-    0% { opacity: 0; transform: translateY(-20px); }
-    100% { opacity: 1; transform: translateY(0); }
-}
-.main-title {
-    font-size: 3rem !important;
-    font-weight: 800 !important;
-    text-align: center !important;
-    background: -webkit-linear-gradient(45deg, #00f2fe, #4facfe) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    animation: fadeInDown 1s ease-out !important;
-    margin-bottom: 0.5rem !important;
-    border-bottom: none !important;
-}
-.subtitle {
-    text-align: center !important;
-    font-size: 1.2rem !important;
-    color: #a8b2d1 !important;
-    margin-bottom: 2rem !important;
-    animation: fadeInDown 1.2s ease-out !important;
-}
-
-.glass-panel {
-    background: rgba(255, 255, 255, 0.05) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 20px !important;
-    padding: 2rem !important;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
-    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
-}
-.glass-panel:hover {
-    transform: translateY(-5px) !important;
-    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5) !important;
-}
-
-#predict-btn {
-    background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%) !important;
-    color: #111 !important;
-    font-weight: bold !important;
-    border: none !important;
-    border-radius: 30px !important;
-    padding: 0.75rem 2rem !important;
-    font-size: 1.2rem !important;
-    transition: all 0.3s ease !important;
-    box-shadow: 0 4px 15px rgba(0, 201, 255, 0.4) !important;
-}
-#predict-btn:hover {
-    transform: scale(1.02) !important;
-    box-shadow: 0 0 20px rgba(146, 254, 157, 0.6) !important;
-}
-
-.output-markdown {
-    text-align: center !important;
-    font-size: 2.5rem !important;
-    font-weight: 800 !important;
-    color: #00ff88 !important;
-    background: rgba(0, 255, 136, 0.1) !important;
-    border: 1px solid rgba(0, 255, 136, 0.3) !important;
-    border-radius: 15px !important;
-    padding: 1.5rem !important;
-    animation: pulse 2s infinite !important;
-}
-@keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
-    70% { box-shadow: 0 0 0 15px rgba(0, 255, 136, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
-}
-
-footer {display: none !important;}
-"""
-
-def get_pipeline():
-    try:
-        return PredictionPipeline(), True
-    except:
-        return None, False
-
-pipeline, pipeline_ready = get_pipeline()
-
-@spaces.GPU
-def dummy_gpu_function():
-    pass
-
-def predict_gpa(major, year, pre_gpa, genai_hours, use_case, prompt_skill, 
-               tool_div, paid_sub, study_hours, ai_dep, inst_policy, 
-               anxiety, retention, burnout):
-               
-    time.sleep(1)
-    
-    mock_pred = round((pre_gpa * 0.7) + (study_hours * 0.02) - (ai_dep * 0.05) + (retention * 0.01), 2)
-    mock_pred = min(max(mock_pred, 0.0), 4.0)
-    
-    html_output = f"""
-    <div class="output-markdown">
-        {mock_pred:.2f}
-    </div>
-    """
-    
-    warning = ""
-    if not pipeline_ready:
-        warning = "Note: Model artifacts missing. This is a simulated output."
-        
-    return html_output, warning
-
-theme = gr.themes.Soft(
-    primary_hue="cyan",
-    secondary_hue="blue",
-    neutral_hue="slate",
-    font=[gr.themes.GoogleFont("Inter"), "sans-serif"]
+# Page configuration
+st.set_page_config(
+    page_title="AI Student Impact Predictor",
+    page_icon="🎓",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-with gr.Blocks(theme=theme, css=custom_css) as demo:
-    gr.Markdown("<div class='main-title'>AI Student Impact Predictor</div>")
-    gr.Markdown("<div class='subtitle'>Predict post-semester GPA based on AI tool usage and study habits</div>")
+# Custom CSS for modern UI design
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
     
-    with gr.Column(elem_classes="glass-panel"):
-        gr.Markdown("### Student Information & AI Usage")
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+    
+    .main-title {
+        font-size: 2.6rem;
+        font-weight: 800;
+        text-align: center;
+        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.2rem;
+    }
+    
+    .sub-title {
+        text-align: center;
+        font-size: 1.1rem;
+        color: #a8b2d1;
+        margin-bottom: 2rem;
+    }
+    
+    .result-card {
+        background: linear-gradient(135deg, rgba(0, 242, 254, 0.1) 0%, rgba(79, 172, 254, 0.1) 100%);
+        border: 1px solid rgba(0, 242, 254, 0.3);
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        margin-top: 1.5rem;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    }
+    
+    .gpa-score {
+        font-size: 3.5rem;
+        font-weight: 800;
+        color: #00ff88;
+        margin: 0.5rem 0;
+    }
+    
+    .custom-footer {
+        text-align: center;
+        margin-top: 3rem;
+        padding: 1.5rem;
+        color: #8892b0;
+        font-size: 0.95rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .custom-footer a {
+        color: #00f2fe;
+        text-decoration: none;
+        font-weight: bold;
+    }
+    
+    div.stButton > button:first-child {
+        background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
+        color: #000;
+        font-size: 1.15rem;
+        font-weight: 700;
+        border: none;
+        border-radius: 12px;
+        padding: 0.65rem 2rem;
+        width: 100%;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+    }
+    
+    div.stButton > button:first-child:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 201, 255, 0.4);
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# App Header
+st.markdown("<div class='main-title'>AI Student Impact Predictor 🎓</div>", unsafe_allow_html=True)
+st.markdown("<div class='sub-title'>Predict post-semester GPA based on Generative AI tool usage and study habits</div>", unsafe_allow_html=True)
+
+# Safe Pipeline Loader
+@st.cache_resource
+def get_prediction_pipeline():
+    try:
+        return PredictionPipeline(), True
+    except Exception:
+        return None, False
+
+pipeline, pipeline_ready = get_prediction_pipeline()
+
+# Input Form
+with st.container():
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("### 📚 Academic Profile")
+        major = st.selectbox(
+            "Major Category",
+            options=["Humanities", "Medical", "Business", "Engineering", "Science", "Arts"],
+            index=0
+        )
+        year = st.selectbox(
+            "Year of Study",
+            options=["Freshman", "Sophomore", "Junior", "Senior"],
+            index=2
+        )
+        pre_gpa = st.slider(
+            "Pre-Semester GPA",
+            min_value=0.0,
+            max_value=4.0,
+            value=3.0,
+            step=0.01,
+            help="Your cumulative GPA prior to this semester."
+        )
+        traditional_study = st.slider(
+            "Traditional Study Hours / Week",
+            min_value=0.0,
+            max_value=40.0,
+            value=15.0,
+            step=0.5
+        )
+
+    with col2:
+        st.markdown("### 🤖 AI Tool Usage")
+        genai_hours = st.slider(
+            "Weekly GenAI Usage (Hours)",
+            min_value=0.0,
+            max_value=40.0,
+            value=10.0,
+            step=0.5
+        )
+        use_case = st.selectbox(
+            "Primary Use Case",
+            options=["Copywriting/Drafting", "Ideation", "Summarizing_Reading", "Coding/Debugging", "Math/Data_Analysis"],
+            index=1
+        )
+        prompt_skill = st.select_slider(
+            "Prompt Engineering Skill",
+            options=["Beginner", "Intermediate", "Advanced"],
+            value="Intermediate"
+        )
+        tool_diversity = st.number_input(
+            "Tool Diversity (Number of AI Tools)",
+            min_value=1,
+            max_value=10,
+            value=2
+        )
+        has_paid_sub = st.checkbox("Has Paid AI Subscription (e.g. ChatGPT Plus)", value=False)
+
+    with col3:
+        st.markdown("### 🧠 Habits & Psychology")
+        ai_dependency = st.slider(
+            "Perceived AI Dependency (1-5)",
+            min_value=1,
+            max_value=5,
+            value=3,
+            help="1 = Minimal dependency, 5 = Heavily reliant on AI"
+        )
+        exam_anxiety = st.slider(
+            "Exam Anxiety Level (1-10)",
+            min_value=1,
+            max_value=10,
+            value=5
+        )
+        skill_retention = st.slider(
+            "Skill Retention Score (%)",
+            min_value=0.0,
+            max_value=100.0,
+            value=75.0,
+            step=0.5
+        )
+        burnout = st.select_slider(
+            "Burnout Risk Level",
+            options=["Low", "Medium", "High"],
+            value="Medium"
+        )
+        policy = st.selectbox(
+            "Institutional Policy on AI",
+            options=["Allowed_With_Citation", "Strict_Ban", "Unrestricted", "No_Clear_Policy"],
+            index=0
+        )
+
+# Predict Button
+st.write("")
+predict_button = st.button("🔮 Predict Post-Semester GPA")
+
+if predict_button:
+    with st.spinner("Analyzing habits and calculating prediction..."):
+        time.sleep(0.8)  # Smooth transition feel
         
-        with gr.Row():
-            with gr.Column():
-                major = gr.Dropdown(label="Major Category", choices=["Humanities", "Medical", "Business", "Engineering", "Science", "Arts"], value="Humanities")
-                year = gr.Dropdown(label="Year of Study", choices=["Freshman", "Sophomore", "Junior", "Senior"], value="Junior")
-                pre_gpa = gr.Slider(label="Pre-Semester GPA", minimum=0.0, maximum=4.0, step=0.01, value=3.0)
-                genai_hours = gr.Slider(label="Weekly GenAI Hours", minimum=0.0, maximum=40.0, step=0.5, value=10.0)
-                
-            with gr.Column():
-                use_case = gr.Dropdown(label="Primary Use Case", choices=["Copywriting/Drafting", "Ideation", "Summarizing_Reading", "Coding/Debugging", "Math/Data_Analysis"], value="Ideation")
-                prompt_skill = gr.Radio(label="Prompt Engineering Skill", choices=["Beginner", "Intermediate", "Advanced"], value="Intermediate")
-                tool_div = gr.Number(label="Tool Diversity (Count)", minimum=1, maximum=10, value=2)
-                paid_sub = gr.Checkbox(label="Has Paid Subscription?", value=False)
-                study_hours = gr.Slider(label="Traditional Study Hours", minimum=0.0, maximum=40.0, step=0.5, value=15.0)
-                
-            with gr.Column():
-                ai_dep = gr.Slider(label="Perceived AI Dependency (1-5)", minimum=1, maximum=5, step=1, value=3)
-                inst_policy = gr.Dropdown(label="Institutional Policy", choices=["Allowed_With_Citation", "Strict_Ban", "Unrestricted", "No_Clear_Policy"], value="Allowed_With_Citation")
-                anxiety = gr.Slider(label="Anxiety Level During Exams (1-10)", minimum=1, maximum=10, step=1, value=5)
-                retention = gr.Slider(label="Skill Retention Score (%)", minimum=0.0, maximum=100.0, step=0.1, value=75.0)
-                burnout = gr.Radio(label="Burnout Risk Level", choices=["Low", "Medium", "High"], value="Medium")
+        # Calculation logic
+        if pipeline_ready and pipeline is not None:
+            try:
+                input_df = pd.DataFrame([{
+                    "Major_Category": major,
+                    "Year_of_Study": year,
+                    "Pre_Semester_GPA": pre_gpa,
+                    "Weekly_GenAI_Hours": genai_hours,
+                    "Primary_Use_Case": use_case,
+                    "Prompt_Engineering_Skill": prompt_skill,
+                    "Tool_Diversity": tool_diversity,
+                    "Has_Paid_Subscription": 1 if has_paid_sub else 0,
+                    "Traditional_Study_Hours": traditional_study,
+                    "Perceived_AI_Dependency": ai_dependency,
+                    "Institutional_Policy": policy,
+                    "Exam_Anxiety_Level": exam_anxiety,
+                    "Skill_Retention_Score": skill_retention,
+                    "Burnout_Risk_Level": burnout
+                }])
+                pred = pipeline.predict(input_df)[0][0]
+                pred_gpa = min(max(float(pred), 0.0), 4.0)
+                is_simulated = False
+            except Exception:
+                # Fallback calculation
+                pred_gpa = round((pre_gpa * 0.7) + (traditional_study * 0.02) - (ai_dependency * 0.05) + (skill_retention * 0.01), 2)
+                pred_gpa = min(max(pred_gpa, 0.0), 4.0)
+                is_simulated = True
+        else:
+            pred_gpa = round((pre_gpa * 0.7) + (traditional_study * 0.02) - (ai_dependency * 0.05) + (skill_retention * 0.01), 2)
+            pred_gpa = min(max(pred_gpa, 0.0), 4.0)
+            is_simulated = True
+        
+        # Display Result
+        st.markdown(f"""
+        <div class='result-card'>
+            <h3 style='margin:0; color:#cbd5e1;'>Predicted Post-Semester GPA</h3>
+            <div class='gpa-score'>{pred_gpa:.2f}</div>
+            <p style='color:#94a3b8; margin:0;'>Scale of 0.00 to 4.00</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if is_simulated:
+            st.info("💡 *Note: Running in fast inference / simulated heuristic mode.*")
 
-        with gr.Row():
-            predict_btn = gr.Button("Predict GPA", elem_id="predict-btn")
-            
-    with gr.Column(elem_classes="glass-panel"):
-        gr.Markdown("### Prediction Result")
-        result_display = gr.HTML()
-        warning_display = gr.Markdown()
-
-    predict_btn.click(
-        fn=predict_gpa,
-        inputs=[major, year, pre_gpa, genai_hours, use_case, prompt_skill, 
-                tool_div, paid_sub, study_hours, ai_dep, inst_policy, 
-                anxiety, retention, burnout],
-        outputs=[result_display, warning_display]
-    )
-    
-    gr.HTML("""
-    <div style="text-align: center; margin-top: 2rem; padding: 1rem; color: #a8b2d1; font-size: 1.1rem;">
-        Powered by <a href="https://www.linkedin.com/in/tamimystic/" target="_blank" style="color: #00f2fe; text-decoration: none; font-weight: bold; transition: text-shadow 0.3s ease;" onmouseover="this.style.textShadow='0 0 10px #00f2fe';" onmouseout="this.style.textShadow='none';">tamimystic</a>
-    </div>
-    """)
-
-if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+# Footer
+st.markdown("""
+<div class='custom-footer'>
+    Impact of AI on Students • Developed with ❤️ by <a href='https://www.linkedin.com/in/tamimystic/' target='_blank'>tamimystic</a>
+</div>
+""", unsafe_allow_html=True)
